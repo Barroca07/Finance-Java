@@ -1,44 +1,66 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '4.0.5'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(24)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(24)
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-h2console'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	runtimeOnly 'org.postgresql:postgresql'
-	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
-	runtimeOnly 'com.h2database:h2'
-	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Web & JPA
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    
+    // Banco de Dados (PostgreSQL para Produção e H2 para Testes)
+    runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'com.h2database:h2'
+    implementation 'org.springframework.boot:spring-boot-h2console'
+    
+    // Segurança e Variáveis de Ambiente (.env)
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+
+    // Testes
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    runtimeOnly 'org.postgresql:postgresql'
-    
-    // ESTA LINHA É OBRIGATÓRIA AQUI:
-    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+# ESTÁGIO 1: Build da aplicação usando JDK 24
+FROM eclipse-temurin:24-jdk-jammy AS build
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-}
+# Define o diretório de trabalho dentro do container
+WORKDIR /app
+
+# Copia todos os arquivos do projeto para o container
+COPY . .
+
+# Dá permissão de execução para o Gradle e compila o projeto
+RUN chmod +x ./gradlew
+RUN ./gradlew clean build -x test
+
+# ESTÁGIO 2: Execução da aplicação usando JRE 24 (mais leve)
+FROM eclipse-temurin:24-jre-jammy
+
+WORKDIR /app
+
+# Copia apenas o arquivo .jar gerado no estágio anterior
+COPY --from=build /app/build/libs/*.jar app.jar
+
+# Expõe a porta padrão (O Render usará a variável PORT)
+EXPOSE 8080
+
+# Comando para iniciar a aplicação
+ENTRYPOINT ["java", "-jar", "app.jar"]s
