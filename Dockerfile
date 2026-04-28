@@ -1,4 +1,3 @@
-
 # ESTÁGIO 1: Build
 FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app

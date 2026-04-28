@@ -9,7 +9,7 @@ if (!userStr) {
 const currentUser = JSON.parse(userStr);
 
 // Esse é o endereço de onde o Java está rodando. É com ele que vamos conversar!
-const API_URL = 'http://localhost:8082/api/transactions';
+const API_URL = 'http://localhost:8080/api/transactions';
 
 // State (Onde guardamos a lista de transações temporariamente no JavaScript)
 let transactions = [];
