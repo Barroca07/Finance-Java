@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance App | Login</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .auth-container .logo {
+            justify-content: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .auth-form .input-group {
+            text-align: left;
+            margin-bottom: 0;
+        }
+
+        .toggle-form {
+            margin-top: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .toggle-form a {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .toggle-form a:hover {
+            color: var(--color-primary-hover);
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: var(--color-danger);
+            font-size: 0.9rem;
+            margin-top: -10px;
+            display: none;
+        }
+        
+        #register-form {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container glass-effect">
+        <div class="logo">
+            <i class="ph-bold ph-wallet"></i>
+            <h2>FinBoard</h2>
+        </div>
+
+        <!-- Formulário de Login -->
+        <form id="login-form" class="auth-form">
+            <h3>Entrar</h3>
+            <div class="error-message" id="login-error"></div>
+            <div class="input-group">
+                <label>Usuário</label>
+                <input type="text" id="login-username" required placeholder="Digite seu usuário">
+            </div>
+            <div class="input-group">
+                <label>Senha</label>
+                <input type="password" id="login-password" required placeholder="Digite sua senha">
+            </div>
+            <button type="submit" class="btn-primary">
+                <i class="ph-bold ph-sign-in"></i> Entrar
+            </button>
+            <div class="toggle-form">
+                Não tem uma conta? <a onclick="toggleForm()">Cadastre-se</a>
+            </div>
+        </form>
+
+        <!-- Formulário de Registro -->
+        <form id="register-form" class="auth-form">
+            <h3>Criar Conta</h3>
+            <div class="error-message" id="register-error"></div>
+            <div class="input-group">
+                <label>Nome Completo</label>
+                <input type="text" id="reg-name" required placeholder="Seu nome">
+            </div>
+            <div class="input-group">
+                <label>Usuário</label>
+                <input type="text" id="reg-username" required placeholder="Escolha um usuário">
+            </div>
+            <div class="input-group">
+                <label>Senha</label>
+                <input type="password" id="reg-password" required placeholder="Crie uma senha">
+            </div>
+            <button type="submit" class="btn-primary">
+                <i class="ph-bold ph-user-plus"></i> Cadastrar
+            </button>
+            <div class="toggle-form">
+                Já tem uma conta? <a onclick="toggleForm()">Faça login</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+</html>

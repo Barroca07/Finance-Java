@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance App | Java</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar lateral animada futuramente ou cabeçalho superior -->
+        <header class="top-nav">
+            <div class="logo">
+                <i class="ph-bold ph-wallet"></i>
+                <h2>FinBoard</h2>
+            </div>
+            <div class="user-profile" style="display: flex; align-items: center; gap: 15px;">
+                <div class="avatar" title="Seu Perfil">--</div>
+                <button onclick="logout()" class="btn-delete" title="Sair" style="font-size: 1.5rem;">
+                    <i class="ph-bold ph-sign-out"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="dashboard">
+            <!-- Widgets de Resumo -->
+            <section class="summary-cards">
+                <div class="card glass-effect">
+                    <div class="card-header">
+                        <span>Receitas</span>
+                        <i class="ph ph-arrow-circle-up text-green"></i>
+                    </div>
+                    <h3 id="income-total">R$ 0,00</h3>
+                </div>
+                <div class="card glass-effect">
+                    <div class="card-header">
+                        <span>Despesas</span>
+                        <i class="ph ph-arrow-circle-down text-red"></i>
+                    </div>
+                    <h3 id="expense-total">R$ 0,00</h3>
+                </div>
+                <div class="card glass-effect total-card">
+                    <div class="card-header">
+                        <span>Saldo Total</span>
+                        <i class="ph ph-currency-circle-dollar text-blue"></i>
+                    </div>
+                    <h3 id="balance-total">R$ 0,00</h3>
+                </div>
+            </section>
+
+            <!-- Área Inferior: Formulário e Lista -->
+            <section class="content-grid">
+                <!-- Seção de Inserção -->
+                <div class="form-section glass-effect">
+                    <h2>Nova Transação</h2>
+                    <form id="transaction-form">
+                        <div class="input-group">
+                            <label>Descrição</label>
+                            <input type="text" id="desc" required placeholder="Ex: Conta de Luz">
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Valor</label>
+                                <input type="number" step="0.01" id="amount" required placeholder="0.00">
+                            </div>
+                            <div class="input-group">
+                                <label>Data</label>
+                                <input type="date" id="date" required>
+                            </div>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Tipo</label>
+                                <select id="type" required>
+                                    <option value="RECEITA">Receita</option>
+                                    <option value="DESPESA">Despesa</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Categoria</label>
+                                <select id="category" required>
+                                    <option value="CASA">Casa</option>
+                                    <option value="ALIMENTACAO">Alimentação</option>
+                                    <option value="TRANSPORTE">Transporte</option>
+                                    <option value="LAZER">Lazer</option>
+                                    <option value="SALARIO">Salário</option>
+                                    <option value="OUTROS">Outros</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <i class="ph-bold ph-plus"></i> Adicionar
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tabela de Transações -->
+                <div class="list-section glass-effect">
+                    <h2>Últimas Transações</h2>
+                    <div class="table-responsive">
+                        <table id="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Descrição</th>
+                                    <th>Categoria</th>
+                                    <th>Data</th>
+                                    <th>Valor</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transaction-list">
+                                <!-- Preenchido dinamicamente pelo JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
