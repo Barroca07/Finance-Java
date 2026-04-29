@@ -2,8 +2,8 @@
 FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 COPY . .
-RUN chmod +x ./gradlew
-RUN ./gradlew clean build -x test
+# Removendo o 'clean' para ser mais direto
+RUN ./gradlew build -x test --no-daemon
 
 # ESTÁGIO 2: Execução
 FROM eclipse-temurin:21-jre-jammy
