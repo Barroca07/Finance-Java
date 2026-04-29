@@ -2,7 +2,10 @@
 FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 COPY . .
-# Removendo o 'clean' para ser mais direto
+
+# ESSA LINHA É A CHAVE: Dá permissão de execução ao gradlew
+RUN chmod +x ./gradlew
+
 RUN ./gradlew build -x test --no-daemon
 
 # ESTÁGIO 2: Execução
