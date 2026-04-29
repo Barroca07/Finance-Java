@@ -11,7 +11,7 @@ import java.util.Optional;
 
 // @RestController diz que esta classe recebe requisições de fora (do navegador) e devolve os dados puros (em JSON)
 @RestController
-// @RequestMapping("/api/users") diz que toda função aqui dentro vai começar com o endereço localhost:8080/api/users
+// @RequestMapping("/api/users") diz que toda função aqui dentro vai começar com o endereço https://finance-java.onrender.com/api/users
 @RequestMapping("/api/users")
 // @CrossOrigin("*") libera para que o Javascript rodando no seu navegador consiga acessar essa API sem bloqueios do Google Chrome
 @CrossOrigin(origins = "*") 

@@ -11,7 +11,7 @@ import java.util.List;
 // Controlador responsável por ouvir as requisições de Transações (Extrato, Nova Despesa, etc)
 @RestController
 @RequestMapping("/api/transactions") // O endereço base no navegador/Javascript será sempre /api/transactions
-@CrossOrigin(origins = "*") // Permite que o Frontend no localhost acesse esse Backend sem dar erro de CORS
+@CrossOrigin(origins = "*") // Permite que o Frontend no https://finance-java.onrender.com/ acesse esse Backend sem dar erro de CORS
 public class TransactionController {
 
     @Autowired

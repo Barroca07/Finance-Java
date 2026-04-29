@@ -1,5 +1,5 @@
 // Endereço da API Java que cuida dos usuários
-const API_URL = 'http://localhost:8080/api/users';
+const API_URL = 'https://finance-java.onrender.com/api/users';
 
 // Função para alternar visualmente entre "Formulário de Login" e "Formulário de Cadastro"
 function toggleForm() {
