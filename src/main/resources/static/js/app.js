@@ -13,7 +13,10 @@ const API_URL = 'https://finance-java.onrender.com/api/transactions';
 
 // State (Onde guardamos a lista de transações temporariamente no JavaScript)
 let transactions = [];
+let filteredTransactions = [];
 let editingTransactionId = null;
+let currentMonthFilter = '';
+let categoryChart = null;
 
 // DOM Elements (Pegando as caixinhas e tabelas do HTML para o JS conseguir alterar o que está escrito nelas)
 const form = document.getElementById('transaction-form');
@@ -38,6 +41,38 @@ const formatDate = (dateString) => {
 
 // Start App (Função que roda assim que a página termina de carregar)
 const init = async () => {
+    // Configura o filtro de mês inicial para o mês corrente
+    const today = new Date();
+    const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const currentYear = today.getFullYear();
+    currentMonthFilter = `${currentYear}-${currentMonth}`;
+    
+    const monthFilterEl = document.getElementById('month-filter');
+    if (monthFilterEl) {
+        monthFilterEl.value = currentMonthFilter;
+        monthFilterEl.addEventListener('change', (e) => {
+            currentMonthFilter = e.target.value;
+            applyFilterAndRender();
+        });
+
+        // Lógica dos botões de < e >
+        const updateMonth = (increment) => {
+            if (!currentMonthFilter) return;
+            const [yearStr, monthStr] = currentMonthFilter.split('-');
+            let date = new Date(parseInt(yearStr), parseInt(monthStr) - 1 + increment, 1);
+            const newMonth = String(date.getMonth() + 1).padStart(2, '0');
+            const newYear = date.getFullYear();
+            currentMonthFilter = `${newYear}-${newMonth}`;
+            monthFilterEl.value = currentMonthFilter;
+            applyFilterAndRender();
+        };
+
+        const prevBtn = document.getElementById('prev-month');
+        const nextBtn = document.getElementById('next-month');
+        if (prevBtn) prevBtn.addEventListener('click', () => updateMonth(-1));
+        if (nextBtn) nextBtn.addEventListener('click', () => updateMonth(1));
+    }
+
     // Coloca as iniciais do usuário no canto superior direito (Avatar)
     if (currentUser) {
         const initials = currentUser.name.substring(0, 2).toUpperCase();
@@ -61,7 +96,7 @@ const fetchTransactions = async () => {
         const response = await fetch(`${API_URL}?userId=${currentUser.id}`);
         if (response.ok) {
             transactions = await response.json(); // Pega o JSON do Java e salva na nossa lista local
-            render(); // Manda desenhar a tabela e os cards de saldo na tela
+            applyFilterAndRender(); // Aplica o filtro e desenha a tela
         } else {
             console.error('Failed to fetch transactions');
         }
@@ -159,31 +194,42 @@ const deleteTransaction = async (id) => {
         if (response.ok) {
             // Remove a transação apagada da nossa lista no JavaScript
             transactions = transactions.filter(t => t.id !== id);
-            render(); // Manda desenhar tudo de novo (agora sem ela)
+            applyFilterAndRender(); // Aplica o filtro e desenha de novo
         }
     } catch (error) {
         console.error('Error deleting transaction:', error);
     }
 };
 
+// Filter Logic
+const applyFilterAndRender = () => {
+    if (currentMonthFilter) {
+        filteredTransactions = transactions.filter(t => t.date.startsWith(currentMonthFilter));
+    } else {
+        filteredTransactions = [...transactions];
+    }
+    render();
+};
+
 // Render UI Components (Manda desenhar a lista e os saldos)
 const render = () => {
     renderList();
     renderSummary();
+    renderChart();
 };
 
 // Render List (Pega a tabela HTML vazia e injeta os itens dentro)
 const renderList = () => {
     transactionList.innerHTML = ''; // Limpa a tabela
     
-    // Se não tiver transações, mostra uma mensagem amigável
-    if (transactions.length === 0) {
-        transactionList.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Nenhuma transação encontrada.</td></tr>`;
+    // Se não tiver transações no mês, mostra uma mensagem
+    if (filteredTransactions.length === 0) {
+        transactionList.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Nenhuma transação encontrada no período.</td></tr>`;
         return;
     }
 
-    // Para cada transação, cria uma linha (<tr>) na tabela e joga as informações nos quadradinhos (<td>)
-    transactions.forEach(t => {
+    // Para cada transação filtrada, cria uma linha (<tr>)
+    filteredTransactions.forEach(t => {
         const amountClass = t.type === 'RECEITA' ? 'type-receita' : 'type-despesa';
         const sign = t.type === 'RECEITA' ? '+' : '-';
         
@@ -202,29 +248,103 @@ const renderList = () => {
                 </button>
             </td>
         `;
-        transactionList.appendChild(tr); // Gruda a linha na tabela
+        transactionList.appendChild(tr);
     });
 };
 
-// Calculate and render Summary (Faz a conta de matemática de Receitas e Despesas)
+// Calculate and render Summary
 const renderSummary = () => {
-    // Pega só as que são RECEITA e soma o valor
-    const income = transactions
+    const income = filteredTransactions
         .filter(t => t.type === 'RECEITA')
         .reduce((sum, t) => sum + t.amount, 0);
 
-    // Pega só as que são DESPESA e soma o valor
-    const expense = transactions
+    const expense = filteredTransactions
         .filter(t => t.type === 'DESPESA')
         .reduce((sum, t) => sum + t.amount, 0);
 
-    // Calcula o que sobrou no bolso
     const balance = income - expense;
 
-    // Joga os valores formatados para reais lá nos Cartões (Cards) superiores
     incomeTotalEl.textContent = formatCurrency(income);
     expenseTotalEl.textContent = formatCurrency(expense);
     balanceTotalEl.textContent = formatCurrency(balance);
+};
+
+// Render Category Chart
+const renderChart = () => {
+    const ctx = document.getElementById('category-chart');
+    if (!ctx) return;
+
+    // Calcula os gastos por categoria
+    const expensesByCategory = {};
+    filteredTransactions.forEach(t => {
+        if (t.type === 'DESPESA') {
+            expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
+        }
+    });
+
+    const labels = Object.keys(expensesByCategory);
+    const data = Object.values(expensesByCategory);
+
+    // Se já houver um gráfico desenhado, a gente destrói para criar o novo atualizado
+    if (categoryChart) {
+        categoryChart.destroy();
+    }
+
+    // Tabela de cores padrão
+    const categoryColors = {
+        'CASA': '#3b82f6', // blue
+        'ALIMENTACAO': '#10b981', // emerald
+        'TRANSPORTE': '#f59e0b', // amber
+        'LAZER': '#8b5cf6', // violet
+        'SALARIO': '#14b8a6', // teal
+        'OUTROS': '#64748b' // slate
+    };
+
+    const backgroundColors = labels.map(label => categoryColors[label] || '#94a3b8');
+
+    categoryChart = new Chart(ctx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: backgroundColors,
+                borderWidth: 0,
+                hoverOffset: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        color: '#f8fafc',
+                        font: {
+                            family: "'Inter', sans-serif"
+                        },
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.raw !== null) {
+                                label += formatCurrency(context.raw);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
 };
 
 // Dá o "Start" na aplicação toda
