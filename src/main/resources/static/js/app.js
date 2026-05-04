@@ -13,6 +13,7 @@ const API_URL = 'https://finance-java.onrender.com/api/transactions';
 
 // State (Onde guardamos a lista de transações temporariamente no JavaScript)
 let transactions = [];
+let editingTransactionId = null;
 
 // DOM Elements (Pegando as caixinhas e tabelas do HTML para o JS conseguir alterar o que está escrito nelas)
 const form = document.getElementById('transaction-form');
@@ -69,12 +70,12 @@ const fetchTransactions = async () => {
     }
 };
 
-// Add Transaction (Ouvinte de evento: Quando o usuário clicar em "Adicionar" no formulário)
+// Add or Edit Transaction (Ouvinte de evento: Quando o usuário enviar o formulário)
 form.addEventListener('submit', async (e) => {
     e.preventDefault(); // Impede a página de recarregar sozinha (comportamento padrão do HTML)
 
     // Monta o "pacotinho" de dados pegando o que foi digitado nos campos
-    const newTransaction = {
+    const transactionData = {
         description: document.getElementById('desc').value,
         amount: parseFloat(document.getElementById('amount').value),
         type: document.getElementById('type').value,
@@ -84,18 +85,35 @@ form.addEventListener('submit', async (e) => {
     };
 
     try {
-        // Faz o POST, enviando o nosso pacotinho no formato JSON pro Java salvar
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newTransaction)
-        });
+        let response;
+        if (editingTransactionId) {
+            // Faz o PUT para atualizar a transação
+            response = await fetch(`${API_URL}/${editingTransactionId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(transactionData)
+            });
+            
+            if (response.ok) {
+                editingTransactionId = null;
+                // Restaura o botão para "Adicionar"
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '<i class="ph-bold ph-plus"></i> Adicionar';
+            }
+        } else {
+            // Faz o POST para criar uma nova transação
+            response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(transactionData)
+            });
+        }
 
         if (response.ok) {
-            const savedTransaction = await response.json(); // O Java devolve a transação com o ID gerado pelo banco
-            transactions.unshift(savedTransaction); // Coloca na primeira posição da nossa lista
             await fetchTransactions(); // Busca de novo no Java pra ter certeza que tá sincronizado
             form.reset(); // Limpa os campos do formulário pro usuário digitar o próximo
         }
@@ -103,6 +121,30 @@ form.addEventListener('submit', async (e) => {
         console.error('Error saving transaction:', error);
     }
 });
+
+// Edit Transaction (Preenche o formulário para edição)
+const editTransaction = (id) => {
+    // Encontra a transação na lista local
+    const transaction = transactions.find(t => t.id === id);
+    if (!transaction) return;
+
+    // Preenche os campos com os valores atuais
+    document.getElementById('desc').value = transaction.description;
+    document.getElementById('amount').value = transaction.amount;
+    document.getElementById('type').value = transaction.type;
+    document.getElementById('date').value = transaction.date;
+    document.getElementById('category').value = transaction.category;
+
+    // Define que estamos em modo de edição e qual transação estamos editando
+    editingTransactionId = id;
+
+    // Muda o texto do botão de envio
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="ph-bold ph-pencil-simple"></i> Salvar';
+    
+    // Rola a página para o formulário
+    form.scrollIntoView({ behavior: 'smooth' });
+};
 
 // Delete Transaction (Quando clicar no ícone de lixeira)
 const deleteTransaction = async (id) => {
@@ -152,7 +194,10 @@ const renderList = () => {
             <td>${formatDate(t.date)}</td>
             <td class="${amountClass}">${sign} ${formatCurrency(t.amount)}</td>
             <td>
-                <button class="btn-delete" onclick="deleteTransaction(${t.id})">
+                <button class="btn-edit" onclick="editTransaction(${t.id})" title="Editar">
+                    <i class="ph-bold ph-pencil-simple"></i>
+                </button>
+                <button class="btn-delete" onclick="deleteTransaction(${t.id})" title="Excluir">
                     <i class="ph-bold ph-trash"></i>
                 </button>
             </td>

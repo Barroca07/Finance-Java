@@ -45,4 +45,18 @@ public class TransactionController {
             return ResponseEntity.ok().build(); // Retorna OK pro Javascript
         }).orElse(ResponseEntity.notFound().build()); // Se não achar, retorna 404 Not Found (Não Encontrado)
     }
+
+    // @PutMapping roda quando o Javascript pede para ATUALIZAR (PUT). O "{id}" na URL vai indicar qual transação atualizar.
+    @PutMapping("/{id}")
+    public ResponseEntity<Transaction> updateTransaction(@PathVariable Long id, @RequestBody Transaction transactionDetails) {
+        return repository.findById(id).map(transaction -> {
+            transaction.setDescription(transactionDetails.getDescription());
+            transaction.setAmount(transactionDetails.getAmount());
+            transaction.setType(transactionDetails.getType());
+            transaction.setDate(transactionDetails.getDate());
+            transaction.setCategory(transactionDetails.getCategory());
+            Transaction updatedTransaction = repository.save(transaction);
+            return ResponseEntity.ok(updatedTransaction);
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }
