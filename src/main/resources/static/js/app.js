@@ -9,7 +9,7 @@ if (!userStr) {
 const currentUser = JSON.parse(userStr);
 
 // Esse é o endereço de onde o Java está rodando. É com ele que vamos conversar!
-const API_URL = 'https://finance-java.onrender.com/api/transactions';
+const API_URL = 'http://localhost:8080/api/transactions';
 
 // State (Onde guardamos a lista de transações temporariamente no JavaScript)
 let transactions = [];
@@ -17,6 +17,8 @@ let filteredTransactions = [];
 let editingTransactionId = null;
 let currentMonthFilter = '';
 let categoryChart = null;
+let currentPage = 1;
+const itemsPerPage = 6;
 
 // DOM Elements (Pegando as caixinhas e tabelas do HTML para o JS conseguir alterar o que está escrito nelas)
 const form = document.getElementById('transaction-form');
@@ -24,6 +26,7 @@ const transactionList = document.getElementById('transaction-list');
 const incomeTotalEl = document.getElementById('income-total');
 const expenseTotalEl = document.getElementById('expense-total');
 const balanceTotalEl = document.getElementById('balance-total');
+const paginationControls = document.getElementById('pagination-controls');
 
 // Função para formatar números para o formato de Real (R$ 10,00)
 const formatCurrency = (value) => {
@@ -208,6 +211,7 @@ const applyFilterAndRender = () => {
     } else {
         filteredTransactions = [...transactions];
     }
+    currentPage = 1;
     render();
 };
 
@@ -225,11 +229,17 @@ const renderList = () => {
     // Se não tiver transações no mês, mostra uma mensagem
     if (filteredTransactions.length === 0) {
         transactionList.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Nenhuma transação encontrada no período.</td></tr>`;
+        if (paginationControls) paginationControls.innerHTML = '';
         return;
     }
 
-    // Para cada transação filtrada, cria uma linha (<tr>)
-    filteredTransactions.forEach(t => {
+    const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+    // Para cada transação filtrada e paginada, cria uma linha (<tr>)
+    paginatedTransactions.forEach(t => {
         const amountClass = t.type === 'RECEITA' ? 'type-receita' : 'type-despesa';
         const sign = t.type === 'RECEITA' ? '+' : '-';
         
@@ -250,6 +260,44 @@ const renderList = () => {
         `;
         transactionList.appendChild(tr);
     });
+    
+    renderPaginationControls(totalPages);
+};
+
+const renderPaginationControls = (totalPages) => {
+    if (!paginationControls) return;
+    paginationControls.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = '<i class="ph-bold ph-caret-left"></i>';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.style.cssText = `background: rgba(255, 255, 255, 0.1); border: none; color: ${prevBtn.disabled ? '#64748b' : 'var(--text-primary)'}; padding: 8px 12px; border-radius: 8px; cursor: ${prevBtn.disabled ? 'not-allowed' : 'pointer'}; transition: background 0.2s;`;
+    prevBtn.onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderList();
+        }
+    };
+    paginationControls.appendChild(prevBtn);
+
+    const pageInfo = document.createElement('span');
+    pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+    pageInfo.style.cssText = 'color: var(--text-secondary); font-size: 0.9rem; font-family: "Inter", sans-serif;';
+    paginationControls.appendChild(pageInfo);
+
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = '<i class="ph-bold ph-caret-right"></i>';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.style.cssText = `background: rgba(255, 255, 255, 0.1); border: none; color: ${nextBtn.disabled ? '#64748b' : 'var(--text-primary)'}; padding: 8px 12px; border-radius: 8px; cursor: ${nextBtn.disabled ? 'not-allowed' : 'pointer'}; transition: background 0.2s;`;
+    nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderList();
+        }
+    };
+    paginationControls.appendChild(nextBtn);
 };
 
 // Calculate and render Summary
@@ -297,6 +345,7 @@ const renderChart = () => {
         'TRANSPORTE': '#f59e0b', // amber
         'LAZER': '#8b5cf6', // violet
         'SALARIO': '#14b8a6', // teal
+        'ESTUDOS': '#38bdf8', // sky
         'OUTROS': '#64748b' // slate
     };
 
