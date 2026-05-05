@@ -19,6 +19,7 @@ let currentMonthFilter = '';
 let categoryChart = null;
 let currentPage = 1;
 const itemsPerPage = 6;
+let transactionToDelete = null;
 
 // DOM Elements (Pegando as caixinhas e tabelas do HTML para o JS conseguir alterar o que está escrito nelas)
 const form = document.getElementById('transaction-form');
@@ -27,6 +28,42 @@ const incomeTotalEl = document.getElementById('income-total');
 const expenseTotalEl = document.getElementById('expense-total');
 const balanceTotalEl = document.getElementById('balance-total');
 const paginationControls = document.getElementById('pagination-controls');
+
+const deleteModal = document.getElementById('delete-modal');
+const editModal = document.getElementById('edit-modal');
+const editForm = document.getElementById('edit-transaction-form');
+const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+// Listeners do Modal de Exclusão
+if (cancelDeleteBtn) {
+    cancelDeleteBtn.addEventListener('click', () => {
+        deleteModal.style.display = 'none';
+        transactionToDelete = null;
+    });
+}
+
+if (confirmDeleteBtn) {
+    confirmDeleteBtn.addEventListener('click', async () => {
+        if (!transactionToDelete) return;
+
+        try {
+            const response = await fetch(`${API_URL}/${transactionToDelete}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                transactions = transactions.filter(t => t.id !== transactionToDelete);
+                applyFilterAndRender();
+            }
+        } catch (error) {
+            console.error('Error deleting transaction:', error);
+        } finally {
+            deleteModal.style.display = 'none';
+            transactionToDelete = null;
+        }
+    });
+}
 
 // Função para formatar números para o formato de Real (R$ 10,00)
 const formatCurrency = (value) => {
@@ -108,25 +145,68 @@ const fetchTransactions = async () => {
     }
 };
 
-// Add or Edit Transaction (Ouvinte de evento: Quando o usuário enviar o formulário)
+// Add Transaction (Ouvinte de evento: Quando o usuário enviar o formulário principal)
 form.addEventListener('submit', async (e) => {
-    e.preventDefault(); // Impede a página de recarregar sozinha (comportamento padrão do HTML)
+    e.preventDefault();
 
-    // Monta o "pacotinho" de dados pegando o que foi digitado nos campos
     const transactionData = {
         description: document.getElementById('desc').value,
         amount: parseFloat(document.getElementById('amount').value),
         type: document.getElementById('type').value,
         date: document.getElementById('date').value,
         category: document.getElementById('category').value,
-        userId: currentUser.id // Manda também de qual usuário é essa transação!
+        userId: currentUser.id
     };
 
     try {
-        let response;
-        if (editingTransactionId) {
-            // Faz o PUT para atualizar a transação
-            response = await fetch(`${API_URL}/${editingTransactionId}`, {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(transactionData)
+        });
+
+        if (response.ok) {
+            await fetchTransactions();
+            form.reset();
+        }
+    } catch (error) {
+        console.error('Error saving transaction:', error);
+    }
+});
+
+// Edit Modal Listeners
+const closeEditModal = () => {
+    if (editModal) editModal.style.display = 'none';
+    editingTransactionId = null;
+    if (editForm) editForm.reset();
+};
+
+if (document.getElementById('close-edit-modal-btn')) {
+    document.getElementById('close-edit-modal-btn').addEventListener('click', closeEditModal);
+}
+if (document.getElementById('cancel-edit-btn')) {
+    document.getElementById('cancel-edit-btn').addEventListener('click', closeEditModal);
+}
+
+// Edit Form Submit
+if (editForm) {
+    editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!editingTransactionId) return;
+
+        const transactionData = {
+            description: document.getElementById('edit-desc').value,
+            amount: parseFloat(document.getElementById('edit-amount').value),
+            type: document.getElementById('edit-type').value,
+            date: document.getElementById('edit-date').value,
+            category: document.getElementById('edit-category').value,
+            userId: currentUser.id
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/${editingTransactionId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -135,72 +215,39 @@ form.addEventListener('submit', async (e) => {
             });
             
             if (response.ok) {
-                editingTransactionId = null;
-                // Restaura o botão para "Adicionar"
-                const submitBtn = form.querySelector('button[type="submit"]');
-                submitBtn.innerHTML = '<i class="ph-bold ph-plus"></i> Adicionar';
+                await fetchTransactions();
+                closeEditModal();
             }
-        } else {
-            // Faz o POST para criar uma nova transação
-            response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(transactionData)
-            });
+        } catch (error) {
+            console.error('Error updating transaction:', error);
         }
+    });
+}
 
-        if (response.ok) {
-            await fetchTransactions(); // Busca de novo no Java pra ter certeza que tá sincronizado
-            form.reset(); // Limpa os campos do formulário pro usuário digitar o próximo
-        }
-    } catch (error) {
-        console.error('Error saving transaction:', error);
-    }
-});
-
-// Edit Transaction (Preenche o formulário para edição)
+// Edit Transaction (Abre o modal de edição e preenche os campos)
 const editTransaction = (id) => {
-    // Encontra a transação na lista local
     const transaction = transactions.find(t => t.id === id);
     if (!transaction) return;
 
-    // Preenche os campos com os valores atuais
-    document.getElementById('desc').value = transaction.description;
-    document.getElementById('amount').value = transaction.amount;
-    document.getElementById('type').value = transaction.type;
-    document.getElementById('date').value = transaction.date;
-    document.getElementById('category').value = transaction.category;
-
-    // Define que estamos em modo de edição e qual transação estamos editando
     editingTransactionId = id;
 
-    // Muda o texto do botão de envio
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.innerHTML = '<i class="ph-bold ph-pencil-simple"></i> Salvar';
-    
-    // Rola a página para o formulário
-    form.scrollIntoView({ behavior: 'smooth' });
+    // Preenche os campos do modal
+    document.getElementById('edit-desc').value = transaction.description;
+    document.getElementById('edit-amount').value = transaction.amount;
+    document.getElementById('edit-type').value = transaction.type;
+    document.getElementById('edit-date').value = transaction.date;
+    document.getElementById('edit-category').value = transaction.category;
+
+    if (editModal) {
+        editModal.style.display = 'flex';
+    }
 };
 
-// Delete Transaction (Quando clicar no ícone de lixeira)
-const deleteTransaction = async (id) => {
-    if (!confirm('Deseja realmente excluir esta transação?')) return; // Confirmação de segurança
-
-    try {
-        // Manda um DELETE pro Java dizendo o ID da transação na URL
-        const response = await fetch(`${API_URL}/${id}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            // Remove a transação apagada da nossa lista no JavaScript
-            transactions = transactions.filter(t => t.id !== id);
-            applyFilterAndRender(); // Aplica o filtro e desenha de novo
-        }
-    } catch (error) {
-        console.error('Error deleting transaction:', error);
+// Delete Transaction (Abre o modal de confirmação)
+const deleteTransaction = (id) => {
+    transactionToDelete = id;
+    if (deleteModal) {
+        deleteModal.style.display = 'flex';
     }
 };
 

@@ -1,4 +1,5 @@
 :root {
+    color-scheme: dark;
     /* Premium Dark Theme variables */
     --bg-base: #0f172a; /* Slate 900 */
     --bg-glass: rgba(30, 41, 59, 0.7); /* Translucent Slate 800 */
@@ -334,4 +335,51 @@ tr:hover {
 .btn-edit:hover {
     color: var(--color-primary);
     transform: scale(1.1);
+}
+
+/* === Modal === */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-content h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.modal-content p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.btn-delete-confirm:hover {
+    background: #dc2626 !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
