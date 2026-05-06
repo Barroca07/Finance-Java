@@ -178,6 +178,22 @@ body {
     
     td, th {
         padding: 12px 10px;
+        font-size: 0.9rem;
+    }
+    
+    .top-nav {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .modal-footer button {
+        width: 100%;
+        margin-top: 10px !important;
     }
 }
 
