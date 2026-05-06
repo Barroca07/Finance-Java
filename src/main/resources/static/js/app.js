@@ -445,3 +445,4 @@ const renderChart = () => {
 
 // Dá o "Start" na aplicação toda
 init();
+//.
